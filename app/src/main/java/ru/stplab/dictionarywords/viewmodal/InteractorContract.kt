@@ -1,4 +1,4 @@
-package ru.stplab.dictionarywords.presenter
+package ru.stplab.dictionarywords.viewmodal
 
 import io.reactivex.Observable
 

@@ -8,9 +8,10 @@ import kotlinx.android.synthetic.main.activity_main_recyclerview_item.view.*
 import ru.stplab.dictionarywords.R
 import ru.stplab.dictionarywords.model.data.DataModel
 
-class MainAdapter(private var data: List<DataModel>, val  onClickListener: ((DataModel) -> Unit)? = null
-/*private var onListItemClickListener: OnListItemClickListener*/) :
+class MainAdapter (val onClickListener: ((DataModel) -> Unit)? = null) :
     RecyclerView.Adapter<MainAdapter.RecyclerItemViewHolder>() {
+
+    private var data: List<DataModel> = arrayListOf()
 
     fun setData(data: List<DataModel>) {
         this.data = data
@@ -25,7 +26,7 @@ class MainAdapter(private var data: List<DataModel>, val  onClickListener: ((Dat
     }
 
     override fun onBindViewHolder(holder: RecyclerItemViewHolder, position: Int) {
-        holder.bind(data.get(position))
+        holder.bind(data[position])
     }
 
     override fun getItemCount(): Int {
@@ -37,17 +38,11 @@ class MainAdapter(private var data: List<DataModel>, val  onClickListener: ((Dat
         fun bind(data: DataModel) {
             if (layoutPosition != RecyclerView.NO_POSITION) {
                 itemView.header_textview_recycler_item.text = data.text
-                itemView.description_textview_recycler_item.text = data.meanings?.get(0)?.translation?.translation
+                itemView.description_textview_recycler_item.text =
+                    data.meanings?.get(0)?.translation?.translation
 
-                itemView.setOnClickListener { /*openInNewWindow(data)*/ onClickListener?.invoke(data) }
+                itemView.setOnClickListener { onClickListener?.invoke(data) }
             }
         }
     }
-//
-//    private fun openInNewWindow(listItemData: DataModel) =
-//        onListItemClickListener.onItemClick(listItemData)
-//
-//    interface OnListItemClickListener {
-//        fun onItemClick(data: DataModel)
-//    }
 }

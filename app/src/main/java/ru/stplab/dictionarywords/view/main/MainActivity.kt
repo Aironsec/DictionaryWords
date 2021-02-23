@@ -2,58 +2,62 @@ package ru.stplab.dictionarywords.view.main
 
 import android.os.Bundle
 import android.view.View
+import androidx.lifecycle.Observer
 import androidx.recyclerview.widget.LinearLayoutManager
+import geekbrains.ru.translator.utils.network.isOnline
 import kotlinx.android.synthetic.main.activity_main.*
+import org.koin.androidx.viewmodel.ext.android.viewModel
 import ru.stplab.dictionarywords.R
 import ru.stplab.dictionarywords.model.data.AppState
-import ru.stplab.dictionarywords.presenter.PresenterContract
 import ru.stplab.dictionarywords.view.base.BaseActivity
-import ru.stplab.dictionarywords.view.base.ViewContract
 import ru.stplab.dictionarywords.view.main.adapter.MainAdapter
 
 class MainActivity : BaseActivity<AppState>() {
 
-    private var adapter: MainAdapter? = null
-
-    //    private val onListItemClickListener =
-//        object : MainAdapter.OnListItemClickListener {
-//            override fun onItemClick(data: DataModel) {
-//                toast(data.text)
-//            }
-//        }
-    override fun onCreate(savedInstanceState: Bundle?) {
-        super.onCreate(savedInstanceState)
-        setContentView(R.layout.activity_main)
-        search_fab.setOnClickListener {
-            val searchDialogFragment = SearchDialogFragment.newInstance()
-            searchDialogFragment.setOnSearchClickListener(object :
-                SearchDialogFragment.OnSearchClickListener {
-                override fun onClick(searchWord: String) {
-                    presenter.getData(searchWord, true)
-                }
-            })
-            searchDialogFragment.show(supportFragmentManager, BOTTOM_SHEET_FRAGMENT_DIALOG_TAG)
-        }
+    private val adapter: MainAdapter by lazy {
+        MainAdapter { toast(it.text) }
     }
 
-    override fun createPresenter(): PresenterContract<AppState, ViewContract> = MainPresenterImpl()
+    override val viewModel: MainViewModel by viewModel()
+
+// TODO: 22.02.2021 скажите на сколько твкой подход хорошь или плох,
+//  передовать слики в конструкторе лямдой без использования интерфейсов
+
+    private fun showSearchFragment() = SearchDialogFragment {
+        isNetworkAvailable = isOnline(applicationContext)
+        if (isNetworkAvailable) {
+            viewModel.getData(it, isNetworkAvailable)
+        } else {
+            showNoInternetConnectionDialog()
+        }
+    }.show(supportFragmentManager, BOTTOM_SHEET_FRAGMENT_DIALOG_TAG)
+
+    private fun initView() {
+        search_fab.setOnClickListener { showSearchFragment() }
+        main_activity_recyclerview.layoutManager = LinearLayoutManager(applicationContext)
+        main_activity_recyclerview.adapter = adapter
+    }
+
+    override fun onCreate(savedInstanceState: Bundle?) {
+
+        super.onCreate(savedInstanceState)
+        setContentView(R.layout.activity_main)
+        initView()
+        viewModel.viewState.observe(this, Observer<AppState> { renderData(it) })
+    }
 
     override fun renderData(appState: AppState) {
         when (appState) {
             is AppState.Success -> {
-                val dataModel = appState.data
-                if (dataModel == null || dataModel.isEmpty()) {
-                    showErrorScreen(getString(R.string.empty_server_response_on_success))
+                showViewWorking()
+                val data = appState.data
+                if (data.isNullOrEmpty()) {
+                    showAlertDialog(
+                        getString(R.string.dialog_tittle_sorry),
+                        getString(R.string.empty_server_response_on_success)
+                    )
                 } else {
-                    showViewSuccess()
-                    if (adapter == null) {
-                        main_activity_recyclerview.layoutManager =
-                            LinearLayoutManager(applicationContext)
-                        main_activity_recyclerview.adapter =
-                            MainAdapter(dataModel) { toast(it.text) }
-                    } else {
-                        adapter!!.setData(dataModel)
-                    }
+                    adapter.setData(data)
                 }
             }
             is AppState.Loading -> {
@@ -68,39 +72,21 @@ class MainActivity : BaseActivity<AppState>() {
                 }
             }
             is AppState.Error -> {
-                showErrorScreen(appState.error.message)
+                showViewWorking()
+                showAlertDialog(getString(R.string.error_textview_stub), appState.error.message)
             }
         }
     }
 
-    private fun showErrorScreen(error: String?) {
-        showViewError()
-        error_textview.text = error ?: getString(R.string.undefined_error)
-        reload_button.setOnClickListener {
-            presenter.getData("hi", true)
-        }
-    }
-
-    private fun showViewSuccess() {
-        success_linear_layout.visibility = View.VISIBLE
+    private fun showViewWorking() {
         loading_frame_layout.visibility = View.GONE
-        error_linear_layout.visibility = View.GONE
     }
 
     private fun showViewLoading() {
-        success_linear_layout.visibility = View.GONE
         loading_frame_layout.visibility = View.VISIBLE
-        error_linear_layout.visibility = View.GONE
-    }
-
-    private fun showViewError() {
-        success_linear_layout.visibility = View.GONE
-        loading_frame_layout.visibility = View.GONE
-        error_linear_layout.visibility = View.VISIBLE
     }
 
     companion object {
         private const val BOTTOM_SHEET_FRAGMENT_DIALOG_TAG = "111222"
-
     }
 }

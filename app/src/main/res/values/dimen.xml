@@ -18,7 +18,7 @@
 
     //Text size
     <dimen name="text_size_tip">10sp</dimen>
-    <dimen name="text_size_standard">17sp</dimen>
+    <dimen name="text_size_standard">18sp</dimen>
     <dimen name="text_size_standard_header">20sp</dimen>
     <dimen name="text_size_large">25sp</dimen>
 

@@ -1,50 +1,38 @@
 package ru.stplab.dictionarywords.view.main
 
 import androidx.lifecycle.LiveData
-import io.reactivex.disposables.Disposable
-import io.reactivex.observers.DisposableObserver
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import ru.stplab.dictionarywords.model.data.AppState
 import ru.stplab.dictionarywords.viewmodal.BaseViewModal
-import javax.inject.Inject
 
-class MainViewModel @Inject constructor(
-    private val interactor: MainInteractor
+class MainViewModel (private val interactor: MainInteractor) : BaseViewModal<AppState>() {
 
-) : BaseViewModal<AppState>() {
+    private val liveDataForViewToObserve: LiveData<AppState> = _mutableLiveData
 
     val viewState: LiveData<AppState>
         get() = liveDataForViewToObserve
 
-    private var appState: AppState? = null
-
     override fun getData(word: String, isOnline: Boolean) {
-        compositeDisposable.add(
-            interactor.getData(word, isOnline)
-                .subscribeOn(schedulerProvider.io())
-                .observeOn(schedulerProvider.ui())
-                .doOnSubscribe(doOnSubscribe())
-                .subscribeWith(getObserver())
-        )
+        _mutableLiveData.value = AppState.Loading(null)
+        cancelJob()
+        viewModalCoroutineScope.launch { startInteractor(word, isOnline) }
     }
 
-    private fun doOnSubscribe(): (Disposable) -> Unit =
-        { liveDataForViewToObserve.value = AppState.Loading(null) }
-
-    private fun getObserver(): DisposableObserver<AppState> {
-        return object : DisposableObserver<AppState>() {
-
-            override fun onNext(state: AppState) {
-                appState = state
-                liveDataForViewToObserve.value = state
-            }
-
-            override fun onError(e: Throwable) {
-                liveDataForViewToObserve.value = AppState.Error(e)
-            }
-
-            override fun onComplete() {
-            }
+    private suspend fun startInteractor(word: String, online: Boolean) {
+        withContext(Dispatchers.IO){
+            val result = interactor.getData(word, online)
+            _mutableLiveData.postValue(result)
         }
     }
 
+    override fun handlerError(error: Throwable) {
+        _mutableLiveData.postValue(AppState.Error(error))
+    }
+
+    override fun onCleared() {
+        super.onCleared()
+        _mutableLiveData.value = AppState.Success(null)
+    }
 }

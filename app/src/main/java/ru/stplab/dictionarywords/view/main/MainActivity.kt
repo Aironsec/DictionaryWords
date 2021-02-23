@@ -3,16 +3,14 @@ package ru.stplab.dictionarywords.view.main
 import android.os.Bundle
 import android.view.View
 import androidx.lifecycle.Observer
-import androidx.lifecycle.ViewModelProvider
 import androidx.recyclerview.widget.LinearLayoutManager
 import geekbrains.ru.translator.utils.network.isOnline
 import kotlinx.android.synthetic.main.activity_main.*
+import org.koin.androidx.viewmodel.ext.android.viewModel
 import ru.stplab.dictionarywords.R
-import ru.stplab.dictionarywords.application.App
 import ru.stplab.dictionarywords.model.data.AppState
 import ru.stplab.dictionarywords.view.base.BaseActivity
 import ru.stplab.dictionarywords.view.main.adapter.MainAdapter
-import javax.inject.Inject
 
 class MainActivity : BaseActivity<AppState>() {
 
@@ -20,9 +18,7 @@ class MainActivity : BaseActivity<AppState>() {
         MainAdapter { toast(it.text) }
     }
 
-    @Inject lateinit var viewModelFactory: ViewModelProvider.Factory
-
-    override lateinit var viewModel: MainViewModel
+    override val viewModel: MainViewModel by viewModel()
 
 // TODO: 22.02.2021 скажите на сколько твкой подход хорошь или плох,
 //  передовать слики в конструкторе лямдой без использования интерфейсов
@@ -36,19 +32,18 @@ class MainActivity : BaseActivity<AppState>() {
         }
     }.show(supportFragmentManager, BOTTOM_SHEET_FRAGMENT_DIALOG_TAG)
 
+    private fun initView() {
+        search_fab.setOnClickListener { showSearchFragment() }
+        main_activity_recyclerview.layoutManager = LinearLayoutManager(applicationContext)
+        main_activity_recyclerview.adapter = adapter
+    }
+
     override fun onCreate(savedInstanceState: Bundle?) {
-        App.instance.appComponent.inject(this)
 
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
-
-        viewModel = viewModelFactory.create(MainViewModel::class.java)
-
-        search_fab.setOnClickListener { showSearchFragment() }
+        initView()
         viewModel.viewState.observe(this, Observer<AppState> { renderData(it) })
-
-        main_activity_recyclerview.layoutManager = LinearLayoutManager(applicationContext)
-        main_activity_recyclerview.adapter = adapter
     }
 
     override fun renderData(appState: AppState) {

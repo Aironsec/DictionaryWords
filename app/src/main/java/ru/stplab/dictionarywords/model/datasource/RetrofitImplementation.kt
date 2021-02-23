@@ -1,18 +1,17 @@
 package ru.stplab.dictionarywords.model.datasource
 
-import com.jakewharton.retrofit2.adapter.rxjava2.RxJava2CallAdapterFactory
-import io.reactivex.Observable
-import okhttp3.Interceptor
+import com.jakewharton.retrofit2.adapter.kotlin.coroutines.CoroutineCallAdapterFactory
 import okhttp3.OkHttpClient
 import okhttp3.logging.HttpLoggingInterceptor
 import retrofit2.Retrofit
 import retrofit2.converter.gson.GsonConverterFactory
 import ru.stplab.dictionarywords.model.data.DataModel
+import ru.stplab.dictionarywords.model.data.api.ApiService
 
 class RetrofitImplementation : DataSourceContract<List<DataModel>> {
 
-    override fun getData(word: String): Observable<List<DataModel>> {
-        return getService().search(word)
+    override suspend fun getData(word: String): List<DataModel> {
+        return getService().searchAsync(word).await()
     }
 
     private fun getService(): ApiService {
@@ -23,7 +22,7 @@ class RetrofitImplementation : DataSourceContract<List<DataModel>> {
         return Retrofit.Builder()
             .baseUrl(BASE_URL_LOCATIONS)
             .addConverterFactory(GsonConverterFactory.create())
-            .addCallAdapterFactory(RxJava2CallAdapterFactory.create())
+            .addCallAdapterFactory(CoroutineCallAdapterFactory())
             .client(createOkHttpClient())
             .build()
     }

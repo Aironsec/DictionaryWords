@@ -1,23 +1,33 @@
 package ru.stplab.dictionarywords.viewmodal
 
-import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
-import io.reactivex.disposables.CompositeDisposable
+import kotlinx.coroutines.*
 import ru.stplab.dictionarywords.model.data.AppState
-import ru.stplab.dictionarywords.rx.SchedulerProvider
 
-abstract class BaseViewModal<T: AppState>(
-    protected val liveDataForViewToObserve: MutableLiveData<T> = MutableLiveData(),
-    protected val compositeDisposable: CompositeDisposable = CompositeDisposable(),
-    protected val schedulerProvider: SchedulerProvider = SchedulerProvider()
+abstract class BaseViewModal<T : AppState>(
+    protected val _mutableLiveData: MutableLiveData<T> = MutableLiveData()
 
-): ViewModel() {
+) : ViewModel() {
+
+    protected val viewModalCoroutineScope = CoroutineScope(
+        Dispatchers.Main
+                + SupervisorJob()
+                + CoroutineExceptionHandler { _, throwable ->
+            handlerError(throwable)
+        }
+    )
+
+    abstract fun handlerError(error: Throwable)
 
     abstract fun getData(word: String, isOnline: Boolean)
 
+    protected fun cancelJob() {
+        viewModalCoroutineScope.coroutineContext.cancelChildren()
+    }
+
     override fun onCleared() {
         super.onCleared()
-        compositeDisposable.clear()
+        cancelJob()
     }
 }

@@ -1,4 +1,4 @@
-package geekbrains.ru.translator.utils.ui
+package ru.stplab.dictionarywords.utils.ui
 
 import android.app.Dialog
 import android.os.Bundle
@@ -7,8 +7,8 @@ import androidx.appcompat.app.AppCompatDialogFragment
 class AlertDialogFragment : AppCompatDialogFragment() {
 
     override fun onCreateDialog(savedInstanceState: Bundle?): Dialog {
-        val context = activity
-        var alertDialog = getStubAlertDialog(context!!)
+        val context = requireActivity()
+        var alertDialog = getStubAlertDialog(context)
         val args = arguments
         if (args != null) {
             val title = args.getString(TITLE_EXTRA)

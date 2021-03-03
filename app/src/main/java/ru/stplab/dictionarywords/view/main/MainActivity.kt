@@ -1,21 +1,37 @@
 package ru.stplab.dictionarywords.view.main
 
+import android.content.Intent
 import android.os.Bundle
+import android.view.Menu
+import android.view.MenuItem
 import android.view.View
-import androidx.lifecycle.Observer
 import androidx.recyclerview.widget.LinearLayoutManager
 import geekbrains.ru.translator.utils.network.isOnline
 import kotlinx.android.synthetic.main.activity_main.*
+import kotlinx.android.synthetic.main.loading_layout.*
 import org.koin.androidx.viewmodel.ext.android.viewModel
 import ru.stplab.dictionarywords.R
 import ru.stplab.dictionarywords.model.data.AppState
+import ru.stplab.dictionarywords.model.data.DataModel
+import ru.stplab.dictionarywords.utils.ui.convertMeaningsToString
 import ru.stplab.dictionarywords.view.base.BaseActivity
+import ru.stplab.dictionarywords.view.history.HistoryActivity
 import ru.stplab.dictionarywords.view.main.adapter.MainAdapter
+import ru.stplab.dictionarywords.view.main.description.DescriptionActivity
 
 class MainActivity : BaseActivity<AppState>() {
 
     private val adapter: MainAdapter by lazy {
-        MainAdapter { toast(it.text) }
+        MainAdapter {
+            startActivity(
+                DescriptionActivity.getIntent(
+                    this,
+                    it.text,
+                    it.convertMeaningsToString(),
+                    it.meanings?.get(0)?.imageUrl
+                )
+            )
+        }
     }
 
     override val viewModel: MainViewModel by viewModel()
@@ -39,51 +55,28 @@ class MainActivity : BaseActivity<AppState>() {
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
-
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
         initView()
-        viewModel.viewState.observe(this, Observer<AppState> { renderData(it) })
+        viewModel.viewState.observe(this) { renderData(it) }
     }
 
-    override fun renderData(appState: AppState) {
-        when (appState) {
-            is AppState.Success -> {
-                showViewWorking()
-                val data = appState.data
-                if (data.isNullOrEmpty()) {
-                    showAlertDialog(
-                        getString(R.string.dialog_tittle_sorry),
-                        getString(R.string.empty_server_response_on_success)
-                    )
-                } else {
-                    adapter.setData(data)
-                }
+    override fun onCreateOptionsMenu(menu: Menu?): Boolean {
+        menuInflater.inflate(R.menu.history_menu, menu)
+        return super.onCreateOptionsMenu(menu)
+    }
+
+    override fun onOptionsItemSelected(item: MenuItem): Boolean =
+        when (item.itemId) {
+            R.id.menu_history -> {
+                startActivity(Intent(this, HistoryActivity::class.java))
+                true
             }
-            is AppState.Loading -> {
-                showViewLoading()
-                if (appState.progress != null) {
-                    progress_bar_horizontal.visibility = View.VISIBLE
-                    progress_bar_round.visibility = View.GONE
-                    progress_bar_horizontal.progress = appState.progress
-                } else {
-                    progress_bar_horizontal.visibility = View.GONE
-                    progress_bar_round.visibility = View.VISIBLE
-                }
-            }
-            is AppState.Error -> {
-                showViewWorking()
-                showAlertDialog(getString(R.string.error_textview_stub), appState.error.message)
-            }
+            else -> super.onOptionsItemSelected(item)
         }
-    }
 
-    private fun showViewWorking() {
-        loading_frame_layout.visibility = View.GONE
-    }
-
-    private fun showViewLoading() {
-        loading_frame_layout.visibility = View.VISIBLE
+    override fun setDataToAdapter(data: List<DataModel>){
+        adapter.setData(data)
     }
 
     companion object {

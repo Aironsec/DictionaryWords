@@ -1,5 +1,7 @@
 package ru.stplab.dictionarywords.model.datasource
 
+import com.google.gson.FieldNamingPolicy
+import com.google.gson.GsonBuilder
 import com.jakewharton.retrofit2.adapter.kotlin.coroutines.CoroutineCallAdapterFactory
 import okhttp3.OkHttpClient
 import okhttp3.logging.HttpLoggingInterceptor
@@ -18,10 +20,14 @@ class RetrofitImplementation : DataSourceContract<List<DataModel>> {
         return createRetrofit().create(ApiService::class.java)
     }
 
+    fun gson() = GsonBuilder()
+        .setFieldNamingPolicy(FieldNamingPolicy.IDENTITY)
+        .create()
+
     private fun createRetrofit(): Retrofit {
         return Retrofit.Builder()
             .baseUrl(BASE_URL_LOCATIONS)
-            .addConverterFactory(GsonConverterFactory.create())
+            .addConverterFactory(GsonConverterFactory.create(gson()))
             .addCallAdapterFactory(CoroutineCallAdapterFactory())
             .client(createOkHttpClient())
             .build()

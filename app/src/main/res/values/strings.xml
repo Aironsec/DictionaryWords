@@ -7,6 +7,7 @@
     <string name="empty_server_response_on_success">Response from server is empty</string>
     <string name="button_search">Search</string>
     <string name="search_hint">New word</string>
+    <string name="image_stub">image</string>
     <string name="dialog_button_cancel">Cancel</string>
     <string name="dialog_title_stub">Undefined error</string>
     <string name="dialog_title_device_is_offline">No internet connection</string>
@@ -14,4 +15,5 @@
         internet connection.
     </string>
     <string name="dialog_tittle_sorry">Sorry</string>
+    <string name="menu_title_history">History</string>
 </resources>

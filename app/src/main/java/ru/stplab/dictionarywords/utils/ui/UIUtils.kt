@@ -1,4 +1,4 @@
-package geekbrains.ru.translator.utils.ui
+package ru.stplab.dictionarywords.utils.ui
 
 import android.content.Context
 import androidx.appcompat.app.AlertDialog

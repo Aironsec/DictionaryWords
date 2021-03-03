@@ -1,4 +1,4 @@
-package ru.stplab.dictionarywords.utils
+package ru.stplab.dictionarywords.utils.ui
 
 import android.text.Editable
 import android.text.TextWatcher

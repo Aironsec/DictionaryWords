@@ -10,7 +10,6 @@ import com.google.android.material.textfield.TextInputEditText
 import com.google.android.material.textfield.TextInputLayout
 import kotlinx.android.synthetic.main.search_dialog_fragment.*
 import ru.stplab.dictionarywords.R
-import ru.stplab.dictionarywords.utils.ui.MyOnTextChangeListener
 
 class SearchDialogFragment(
     private val onClickListener: ((String) -> Unit)? = null

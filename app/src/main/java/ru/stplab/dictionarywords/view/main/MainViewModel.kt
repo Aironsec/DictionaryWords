@@ -4,8 +4,8 @@ import androidx.lifecycle.LiveData
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
-import ru.stplab.dictionarywords.model.data.AppState
-import ru.stplab.dictionarywords.viewmodal.BaseViewModal
+import ru.stplab.model.data.AppState
+import ru.stplab.core.viewmodal.BaseViewModal
 
 class MainViewModel (private val interactor: MainInteractor) : BaseViewModal<AppState>() {
 
@@ -14,15 +14,15 @@ class MainViewModel (private val interactor: MainInteractor) : BaseViewModal<App
     val viewState: LiveData<AppState>
         get() = liveDataForViewToObserve
 
-    override fun getData(word: String, isOnline: Boolean) {
+    override fun getData(word: String, isOnline: Boolean, favorites: Boolean) {
         _mutableLiveData.value = AppState.Loading(null)
         cancelJob()
-        viewModalCoroutineScope.launch { startInteractor(word, isOnline) }
+        viewModalCoroutineScope.launch { startInteractor(word, isOnline, favorites) }
     }
 
-    private suspend fun startInteractor(word: String, online: Boolean) {
+    private suspend fun startInteractor(word: String, online: Boolean, favorites: Boolean) {
         withContext(Dispatchers.IO){
-            val result = interactor.getData(word, online)
+            val result = interactor.getData(word, online, favorites)
             _mutableLiveData.postValue(result)
         }
     }

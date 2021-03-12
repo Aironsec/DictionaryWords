@@ -22,8 +22,9 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
-        <activity android:name=".view.main.description.DescriptionActivity"/>
-        <activity android:name=".view.history.HistoryActivity"/>
+        <activity android:name="ru.stplab.descriptionscreen.DescriptionActivity"/>
+        <activity android:name="ru.stplab.historyscreen.HistoryActivity"/>
+        <activity android:name="ru.stplab.favoritesscreen.FavoritesActivity"/>
     </application>
 
 </manifest>

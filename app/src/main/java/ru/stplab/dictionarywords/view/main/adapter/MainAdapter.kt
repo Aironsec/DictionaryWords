@@ -6,8 +6,8 @@ import android.view.ViewGroup
 import androidx.recyclerview.widget.RecyclerView
 import kotlinx.android.synthetic.main.activity_main_recyclerview_item.view.*
 import ru.stplab.dictionarywords.R
-import ru.stplab.dictionarywords.model.data.DataModel
-import ru.stplab.dictionarywords.utils.ui.convertMeaningsToString
+import ru.stplab.model.utils.convertMeaningsToString
+import ru.stplab.model.data.DataModel
 
 class MainAdapter (val onClickListener: ((DataModel) -> Unit)? = null) :
     RecyclerView.Adapter<MainAdapter.RecyclerItemViewHolder>() {

@@ -4,20 +4,19 @@ import android.content.Intent
 import android.os.Bundle
 import android.view.Menu
 import android.view.MenuItem
-import android.view.View
 import androidx.recyclerview.widget.LinearLayoutManager
-import geekbrains.ru.translator.utils.network.isOnline
 import kotlinx.android.synthetic.main.activity_main.*
-import kotlinx.android.synthetic.main.loading_layout.*
 import org.koin.androidx.viewmodel.ext.android.viewModel
 import ru.stplab.dictionarywords.R
-import ru.stplab.dictionarywords.model.data.AppState
-import ru.stplab.dictionarywords.model.data.DataModel
-import ru.stplab.dictionarywords.utils.ui.convertMeaningsToString
-import ru.stplab.dictionarywords.view.base.BaseActivity
-import ru.stplab.dictionarywords.view.history.HistoryActivity
+import ru.stplab.model.data.AppState
+import ru.stplab.model.data.DataModel
+import ru.stplab.utils.network.isOnline
+import ru.stplab.core.BaseActivity
+import ru.stplab.descriptionscreen.DescriptionActivity
+import ru.stplab.model.utils.convertMeaningsToString
 import ru.stplab.dictionarywords.view.main.adapter.MainAdapter
-import ru.stplab.dictionarywords.view.main.description.DescriptionActivity
+import ru.stplab.favoritesscreen.FavoritesActivity
+import ru.stplab.historyscreen.HistoryActivity
 
 class MainActivity : BaseActivity<AppState>() {
 
@@ -36,13 +35,10 @@ class MainActivity : BaseActivity<AppState>() {
 
     override val viewModel: MainViewModel by viewModel()
 
-// TODO: 22.02.2021 скажите на сколько твкой подход хорошь или плох,
-//  передовать слики в конструкторе лямдой без использования интерфейсов
-
     private fun showSearchFragment() = SearchDialogFragment {
         isNetworkAvailable = isOnline(applicationContext)
         if (isNetworkAvailable) {
-            viewModel.getData(it, isNetworkAvailable)
+            viewModel.getData(it, isNetworkAvailable, false)
         } else {
             showNoInternetConnectionDialog()
         }
@@ -57,6 +53,10 @@ class MainActivity : BaseActivity<AppState>() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
+
+        supportActionBar?.setHomeButtonEnabled(false)
+        supportActionBar?.setDisplayHomeAsUpEnabled(false)
+
         initView()
         viewModel.viewState.observe(this) { renderData(it) }
     }
@@ -70,6 +70,10 @@ class MainActivity : BaseActivity<AppState>() {
         when (item.itemId) {
             R.id.menu_history -> {
                 startActivity(Intent(this, HistoryActivity::class.java))
+                true
+            }
+            R.id.menu_favorites -> {
+                startActivity(Intent(this, FavoritesActivity::class.java))
                 true
             }
             else -> super.onOptionsItemSelected(item)

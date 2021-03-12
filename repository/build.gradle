@@ -1,0 +1,23 @@
+plugins {
+    id 'com.android.library'
+    id 'kotlin-android'
+    id 'kotlin-kapt'
+}
+
+dependencies {
+    implementation project(Modules.model)
+
+    implementation Design.appcompat
+
+//    //Retrofit 2
+    implementation Retrofit2.retrofit
+
+    //Room
+    implementation Room.runtime
+    kapt Room.compiler
+    implementation Room.roomKtx
+
+    testImplementation TestImpl.junit
+    androidTestImplementation 'androidx.test.ext:junit:1.1.2'
+    androidTestImplementation TestImpl.espresso
+}

@@ -1,106 +1,89 @@
 package ru.stplab.dictionarywords.view.main
 
+import android.content.Intent
 import android.os.Bundle
-import android.view.View
+import android.view.Menu
+import android.view.MenuItem
 import androidx.recyclerview.widget.LinearLayoutManager
 import kotlinx.android.synthetic.main.activity_main.*
+import org.koin.androidx.viewmodel.ext.android.viewModel
 import ru.stplab.dictionarywords.R
-import ru.stplab.dictionarywords.model.data.AppState
-import ru.stplab.dictionarywords.presenter.PresenterContract
-import ru.stplab.dictionarywords.view.base.BaseActivity
-import ru.stplab.dictionarywords.view.base.ViewContract
+import ru.stplab.model.data.AppState
+import ru.stplab.model.data.DataModel
+import ru.stplab.utils.network.isOnline
+import ru.stplab.core.BaseActivity
+import ru.stplab.descriptionscreen.DescriptionActivity
+import ru.stplab.model.utils.convertMeaningsToString
 import ru.stplab.dictionarywords.view.main.adapter.MainAdapter
+import ru.stplab.favoritesscreen.FavoritesActivity
+import ru.stplab.historyscreen.HistoryActivity
 
 class MainActivity : BaseActivity<AppState>() {
 
-    private var adapter: MainAdapter? = null
+    private val adapter: MainAdapter by lazy {
+        MainAdapter {
+            startActivity(
+                DescriptionActivity.getIntent(
+                    this,
+                    it.text,
+                    it.convertMeaningsToString(),
+                    it.meanings?.get(0)?.imageUrl
+                )
+            )
+        }
+    }
 
-    //    private val onListItemClickListener =
-//        object : MainAdapter.OnListItemClickListener {
-//            override fun onItemClick(data: DataModel) {
-//                toast(data.text)
-//            }
-//        }
+    override val viewModel: MainViewModel by viewModel()
+
+    private fun showSearchFragment() = SearchDialogFragment {
+        isNetworkAvailable = isOnline(applicationContext)
+        if (isNetworkAvailable) {
+            viewModel.getData(it, isNetworkAvailable, false)
+        } else {
+            showNoInternetConnectionDialog()
+        }
+    }.show(supportFragmentManager, BOTTOM_SHEET_FRAGMENT_DIALOG_TAG)
+
+    private fun initView() {
+        search_fab.setOnClickListener { showSearchFragment() }
+        main_activity_recyclerview.layoutManager = LinearLayoutManager(applicationContext)
+        main_activity_recyclerview.adapter = adapter
+    }
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
-        search_fab.setOnClickListener {
-            val searchDialogFragment = SearchDialogFragment.newInstance()
-            searchDialogFragment.setOnSearchClickListener(object :
-                SearchDialogFragment.OnSearchClickListener {
-                override fun onClick(searchWord: String) {
-                    presenter.getData(searchWord, true)
-                }
-            })
-            searchDialogFragment.show(supportFragmentManager, BOTTOM_SHEET_FRAGMENT_DIALOG_TAG)
-        }
+
+        supportActionBar?.setHomeButtonEnabled(false)
+        supportActionBar?.setDisplayHomeAsUpEnabled(false)
+
+        initView()
+        viewModel.viewState.observe(this) { renderData(it) }
     }
 
-    override fun createPresenter(): PresenterContract<AppState, ViewContract> = MainPresenterImpl()
+    override fun onCreateOptionsMenu(menu: Menu?): Boolean {
+        menuInflater.inflate(R.menu.history_menu, menu)
+        return super.onCreateOptionsMenu(menu)
+    }
 
-    override fun renderData(appState: AppState) {
-        when (appState) {
-            is AppState.Success -> {
-                val dataModel = appState.data
-                if (dataModel == null || dataModel.isEmpty()) {
-                    showErrorScreen(getString(R.string.empty_server_response_on_success))
-                } else {
-                    showViewSuccess()
-                    if (adapter == null) {
-                        main_activity_recyclerview.layoutManager =
-                            LinearLayoutManager(applicationContext)
-                        main_activity_recyclerview.adapter =
-                            MainAdapter(dataModel) { toast(it.text) }
-                    } else {
-                        adapter!!.setData(dataModel)
-                    }
-                }
+    override fun onOptionsItemSelected(item: MenuItem): Boolean =
+        when (item.itemId) {
+            R.id.menu_history -> {
+                startActivity(Intent(this, HistoryActivity::class.java))
+                true
             }
-            is AppState.Loading -> {
-                showViewLoading()
-                if (appState.progress != null) {
-                    progress_bar_horizontal.visibility = View.VISIBLE
-                    progress_bar_round.visibility = View.GONE
-                    progress_bar_horizontal.progress = appState.progress
-                } else {
-                    progress_bar_horizontal.visibility = View.GONE
-                    progress_bar_round.visibility = View.VISIBLE
-                }
+            R.id.menu_favorites -> {
+                startActivity(Intent(this, FavoritesActivity::class.java))
+                true
             }
-            is AppState.Error -> {
-                showErrorScreen(appState.error.message)
-            }
+            else -> super.onOptionsItemSelected(item)
         }
-    }
 
-    private fun showErrorScreen(error: String?) {
-        showViewError()
-        error_textview.text = error ?: getString(R.string.undefined_error)
-        reload_button.setOnClickListener {
-            presenter.getData("hi", true)
-        }
-    }
-
-    private fun showViewSuccess() {
-        success_linear_layout.visibility = View.VISIBLE
-        loading_frame_layout.visibility = View.GONE
-        error_linear_layout.visibility = View.GONE
-    }
-
-    private fun showViewLoading() {
-        success_linear_layout.visibility = View.GONE
-        loading_frame_layout.visibility = View.VISIBLE
-        error_linear_layout.visibility = View.GONE
-    }
-
-    private fun showViewError() {
-        success_linear_layout.visibility = View.GONE
-        loading_frame_layout.visibility = View.GONE
-        error_linear_layout.visibility = View.VISIBLE
+    override fun setDataToAdapter(data: List<DataModel>){
+        adapter.setData(data)
     }
 
     companion object {
         private const val BOTTOM_SHEET_FRAGMENT_DIALOG_TAG = "111222"
-
     }
 }

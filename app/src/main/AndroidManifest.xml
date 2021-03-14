@@ -22,9 +22,12 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
-        <activity android:name="ru.stplab.descriptionscreen.DescriptionActivity"/>
-        <activity android:name="ru.stplab.historyscreen.HistoryActivity"/>
-        <activity android:name="ru.stplab.favoritesscreen.FavoritesActivity"/>
+        <activity
+            android:name="ru.stplab.descriptionscreen.DescriptionActivity"
+            android:screenOrientation="portrait"/>
+        <activity
+            android:name="ru.stplab.favoritesscreen.FavoritesActivity"
+            android:screenOrientation="portrait"/>
     </application>
 
 </manifest>

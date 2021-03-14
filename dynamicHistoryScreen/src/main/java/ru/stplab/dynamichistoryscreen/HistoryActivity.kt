@@ -1,4 +1,4 @@
-package ru.stplab.historyscreen
+package ru.stplab.dynamichistoryscreen
 
 import android.os.Bundle
 import androidx.recyclerview.widget.LinearLayoutManager
@@ -8,8 +8,8 @@ import ru.stplab.model.data.AppState
 import ru.stplab.model.data.DataModel
 import ru.stplab.core.BaseActivity
 import ru.stplab.descriptionscreen.DescriptionActivity
-import ru.stplab.historyscreen.adapter.HistoryAdapter
-import ru.stplab.historyscreen.di.injectDependencies
+import ru.stplab.dynamichistoryscreen.adapter.HistoryAdapter
+import ru.stplab.dynamichistoryscreen.di.injectDependencies
 import ru.stplab.model.utils.convertMeaningsToString
 
 class HistoryActivity : BaseActivity<AppState>(){

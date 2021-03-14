@@ -25,6 +25,9 @@ android {
         sourceCompatibility Config.java_version
         targetCompatibility Config.java_version
     }
+
+    dynamicFeatures = [":historyScreen", ':dynamicHistoryScreen']
+
 }
 
 dependencies {
@@ -32,7 +35,6 @@ dependencies {
     implementation project(Modules.model)
     implementation project(Modules.utils)
     implementation project(Modules.repository)
-    implementation project(Modules.historyScreen)
     implementation project(Modules.favoritesScreen)
     implementation project(Modules.descriptionScreen)
 
@@ -51,6 +53,7 @@ dependencies {
     implementation Retrofit2.converterGson
     implementation Retrofit2.loggingInterceptor
     implementation Retrofit2.adapterCoroutines
+
     //Room
     implementation Room.runtime
     implementation Room.roomKtx
@@ -59,6 +62,8 @@ dependencies {
     //Koin
     implementation Koin.koinAndroid
     implementation Koin.koinViewModel
+
+    implementation GooglePlay.googlePlayCore
 
 //    implementation 'com.ethanhua:skeleton:1.1.2'
 //    implementation 'io.supercharge:shimmerlayout:2.1.0'

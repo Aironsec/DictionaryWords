@@ -10,7 +10,7 @@ class App : Application() {
         super.onCreate()
         startKoin {
             androidContext(applicationContext)
-            modules(application, mainScreen, historyScreen, favoritesScreen, netModule, apiModule)
+            modules(application, mainScreen, favoritesScreen, netModule, apiModule)
         }
     }
 }

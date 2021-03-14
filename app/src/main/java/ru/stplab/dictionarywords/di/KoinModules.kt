@@ -11,6 +11,8 @@ import retrofit2.Retrofit
 import retrofit2.converter.gson.GsonConverterFactory
 import ru.stplab.dictionarywords.view.main.MainInteractor
 import ru.stplab.dictionarywords.view.main.MainViewModel
+import ru.stplab.favoritesscreen.FavoritesInteractor
+import ru.stplab.favoritesscreen.FavoritesViewModel
 import ru.stplab.model.data.DataModel
 import ru.stplab.repository.datasource.RetrofitImplementation
 import ru.stplab.repository.datasource.RoomDataBaseImplementation
@@ -72,13 +74,8 @@ val mainScreen = module {
     factory { MainViewModel(get()) }
 }
 
-val historyScreen = module {
-    factory { ru.stplab.historyscreen.HistoryInteractor(get(), get()) }
-    factory { ru.stplab.historyscreen.HistoryViewModel(get()) }
-}
-
 val favoritesScreen = module {
-    factory { ru.stplab.favoritesscreen.FavoritesInteractor(get(), get()) }
-    factory { ru.stplab.favoritesscreen.FavoritesViewModel(get()) }
+    factory { FavoritesInteractor(get(), get()) }
+    factory { FavoritesViewModel(get()) }
 }
 

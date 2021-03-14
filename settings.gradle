@@ -1,3 +1,4 @@
+include ':dynamicHistoryScreen'
 include ':descriptionScreen'
 include ':favoritesScreen'
 include ':historyScreen'

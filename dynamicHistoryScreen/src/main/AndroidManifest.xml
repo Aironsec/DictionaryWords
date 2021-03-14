@@ -1,11 +1,11 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:dist="http://schemas.android.com/apk/distribution"
-    package="ru.stplab.historyscreen">
+    package="ru.stplab.dynamichistoryscreen">
 
     <dist:module
         dist:instant="false"
-        dist:title="@string/title_historyscreenfeature">
+        dist:title="@string/title_dynamichistoryscreen">
         <dist:delivery>
             <dist:on-demand />
         </dist:delivery>
@@ -17,4 +17,5 @@
             android:name=".HistoryActivity"
             android:screenOrientation="portrait" />
     </application>
+
 </manifest>

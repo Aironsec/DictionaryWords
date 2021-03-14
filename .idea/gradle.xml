@@ -15,6 +15,7 @@
             <option value="$PROJECT_DIR$/buildSrc" />
             <option value="$PROJECT_DIR$/core" />
             <option value="$PROJECT_DIR$/descriptionScreen" />
+            <option value="$PROJECT_DIR$/dynamicHistoryScreen" />
             <option value="$PROJECT_DIR$/favoritesScreen" />
             <option value="$PROJECT_DIR$/historyScreen" />
             <option value="$PROJECT_DIR$/model" />

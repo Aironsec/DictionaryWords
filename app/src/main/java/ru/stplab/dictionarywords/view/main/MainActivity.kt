@@ -1,106 +1,199 @@
 package ru.stplab.dictionarywords.view.main
 
+import android.content.Intent
 import android.os.Bundle
-import android.view.View
+import android.view.Menu
+import android.view.MenuItem
+import android.widget.Toast
 import androidx.recyclerview.widget.LinearLayoutManager
+import com.google.android.material.snackbar.Snackbar
+import com.google.android.play.core.appupdate.AppUpdateManager
+import com.google.android.play.core.appupdate.AppUpdateManagerFactory
+import com.google.android.play.core.install.InstallStateUpdatedListener
+import com.google.android.play.core.install.model.AppUpdateType
+import com.google.android.play.core.install.model.InstallStatus
+import com.google.android.play.core.install.model.UpdateAvailability
+import com.google.android.play.core.splitinstall.SplitInstallManager
+import com.google.android.play.core.splitinstall.SplitInstallManagerFactory
+import com.google.android.play.core.splitinstall.SplitInstallRequest
 import kotlinx.android.synthetic.main.activity_main.*
+import org.koin.androidx.viewmodel.ext.android.viewModel
 import ru.stplab.dictionarywords.R
-import ru.stplab.dictionarywords.model.data.AppState
-import ru.stplab.dictionarywords.presenter.PresenterContract
-import ru.stplab.dictionarywords.view.base.BaseActivity
-import ru.stplab.dictionarywords.view.base.ViewContract
+import ru.stplab.model.data.AppState
+import ru.stplab.model.data.DataModel
+import ru.stplab.utils.network.isOnline
+import ru.stplab.core.BaseActivity
+import ru.stplab.descriptionscreen.DescriptionActivity
+import ru.stplab.model.utils.convertMeaningsToString
 import ru.stplab.dictionarywords.view.main.adapter.MainAdapter
+import ru.stplab.favoritesscreen.FavoritesActivity
+
+private const val HISTORY_ACTIVITY_PATH = "ru.stplab.dynamichistoryscreen.HistoryActivity"
+private const val HISTORY_ACTIVITY_FEATURE_NAME = "dynamicHistoryScreen"
+private const val REQUEST_CODE = 42
 
 class MainActivity : BaseActivity<AppState>() {
 
-    private var adapter: MainAdapter? = null
+    private lateinit var splitInstallManager: SplitInstallManager
+    private lateinit var appUpdateManager: AppUpdateManager
 
-    //    private val onListItemClickListener =
-//        object : MainAdapter.OnListItemClickListener {
-//            override fun onItemClick(data: DataModel) {
-//                toast(data.text)
-//            }
-//        }
+    private val adapter: MainAdapter by lazy {
+        MainAdapter {
+            startActivity(
+                DescriptionActivity.getIntent(
+                    this,
+                    it.text,
+                    it.convertMeaningsToString(),
+                    it.meanings?.get(0)?.imageUrl
+                )
+            )
+        }
+    }
+
+    override val viewModel: MainViewModel by viewModel()
+
+    private fun showSearchFragment() = SearchDialogFragment {
+        isNetworkAvailable = isOnline(applicationContext)
+        if (isNetworkAvailable) {
+            viewModel.getData(it, isNetworkAvailable, false)
+        } else {
+            showNoInternetConnectionDialog()
+        }
+    }.show(supportFragmentManager, BOTTOM_SHEET_FRAGMENT_DIALOG_TAG)
+
+    private fun initView() {
+        search_fab.setOnClickListener { showSearchFragment() }
+        main_activity_recyclerview.layoutManager = LinearLayoutManager(applicationContext)
+        main_activity_recyclerview.adapter = adapter
+    }
+
+    private val stateUpdatedListener: InstallStateUpdatedListener =
+        InstallStateUpdatedListener { state ->
+            state?.let {
+                if (it.installStatus() == InstallStatus.DOWNLOADED) {
+                    popupSnackbarForCompleteUpdate()
+                }
+            }
+        }
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
-        search_fab.setOnClickListener {
-            val searchDialogFragment = SearchDialogFragment.newInstance()
-            searchDialogFragment.setOnSearchClickListener(object :
-                SearchDialogFragment.OnSearchClickListener {
-                override fun onClick(searchWord: String) {
-                    presenter.getData(searchWord, true)
+
+        supportActionBar?.setHomeButtonEnabled(false)
+        supportActionBar?.setDisplayHomeAsUpEnabled(false)
+
+        initView()
+        viewModel.viewState.observe(this) { renderData(it) }
+        checkForUpdates()
+    }
+
+    override fun onResume() {
+        super.onResume()
+        appUpdateManager
+            .appUpdateInfo
+            .addOnSuccessListener { appUpdateInfo ->
+                if (appUpdateInfo.installStatus() == InstallStatus.DOWNLOADED) {
+                    popupSnackbarForCompleteUpdate()
                 }
-            })
-            searchDialogFragment.show(supportFragmentManager, BOTTOM_SHEET_FRAGMENT_DIALOG_TAG)
+                if (appUpdateInfo.updateAvailability()
+                    == UpdateAvailability.DEVELOPER_TRIGGERED_UPDATE_IN_PROGRESS
+                ) {
+                    appUpdateManager.startUpdateFlowForResult(
+                        appUpdateInfo,
+                        AppUpdateType.IMMEDIATE,
+                        this,
+                        REQUEST_CODE
+                    )
+                }
+            }
+    }
+
+    override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
+        super.onActivityResult(requestCode, resultCode, data)
+        if (requestCode == REQUEST_CODE) {
+            if (resultCode == RESULT_OK) {
+                appUpdateManager.unregisterListener(stateUpdatedListener)
+            } else {
+                Toast.makeText(
+                    applicationContext,
+                    "Update flow failed! Result code: $resultCode",
+                    Toast.LENGTH_SHORT
+                ).show()
+            }
         }
     }
 
-    override fun createPresenter(): PresenterContract<AppState, ViewContract> = MainPresenterImpl()
+    override fun onCreateOptionsMenu(menu: Menu?): Boolean {
+        menuInflater.inflate(R.menu.history_menu, menu)
+        return super.onCreateOptionsMenu(menu)
+    }
 
-    override fun renderData(appState: AppState) {
-        when (appState) {
-            is AppState.Success -> {
-                val dataModel = appState.data
-                if (dataModel == null || dataModel.isEmpty()) {
-                    showErrorScreen(getString(R.string.empty_server_response_on_success))
-                } else {
-                    showViewSuccess()
-                    if (adapter == null) {
-                        main_activity_recyclerview.layoutManager =
-                            LinearLayoutManager(applicationContext)
-                        main_activity_recyclerview.adapter =
-                            MainAdapter(dataModel) { toast(it.text) }
-                    } else {
-                        adapter!!.setData(dataModel)
+    override fun onOptionsItemSelected(item: MenuItem): Boolean =
+        when (item.itemId) {
+            R.id.menu_history -> {
+                splitInstallManager = SplitInstallManagerFactory.create(applicationContext)
+                val request =
+                    SplitInstallRequest
+                        .newBuilder()
+                        .addModule(HISTORY_ACTIVITY_FEATURE_NAME)
+                        .build()
+
+                splitInstallManager
+                    .startInstall(request)
+                    .addOnSuccessListener {
+                        val intent = Intent().setClassName(packageName, HISTORY_ACTIVITY_PATH)
+                        startActivity(intent)
                     }
-                }
+                    .addOnFailureListener {
+                        Toast.makeText(
+                            applicationContext,
+                            "Couldn't download feature: " + it.message,
+                            Toast.LENGTH_LONG
+                        ).show()
+                    }
+                true
             }
-            is AppState.Loading -> {
-                showViewLoading()
-                if (appState.progress != null) {
-                    progress_bar_horizontal.visibility = View.VISIBLE
-                    progress_bar_round.visibility = View.GONE
-                    progress_bar_horizontal.progress = appState.progress
-                } else {
-                    progress_bar_horizontal.visibility = View.GONE
-                    progress_bar_round.visibility = View.VISIBLE
-                }
+            R.id.menu_favorites -> {
+                startActivity(Intent(this, FavoritesActivity::class.java))
+                true
             }
-            is AppState.Error -> {
-                showErrorScreen(appState.error.message)
+            else -> super.onOptionsItemSelected(item)
+        }
+
+    private fun checkForUpdates() {
+        appUpdateManager = AppUpdateManagerFactory.create(applicationContext)
+        appUpdateManager.appUpdateInfo.addOnSuccessListener { appUpdateIntent ->
+            if (appUpdateIntent.updateAvailability() == UpdateAvailability.UPDATE_AVAILABLE
+                && appUpdateIntent.isUpdateTypeAllowed(AppUpdateType.IMMEDIATE)
+            ) {
+                appUpdateManager.registerListener(stateUpdatedListener)
+                appUpdateManager.startUpdateFlowForResult(
+                    appUpdateIntent,
+                    AppUpdateType.IMMEDIATE,
+                    this,
+                    REQUEST_CODE
+                )
             }
         }
     }
 
-    private fun showErrorScreen(error: String?) {
-        showViewError()
-        error_textview.text = error ?: getString(R.string.undefined_error)
-        reload_button.setOnClickListener {
-            presenter.getData("hi", true)
+    private fun popupSnackbarForCompleteUpdate() {
+        Snackbar.make(
+            findViewById(R.id.activity_main_layout),
+            "An update has just been downloaded.",
+            Snackbar.LENGTH_INDEFINITE
+        ).apply {
+            setAction("RESTART") { appUpdateManager.completeUpdate() }
+            show()
         }
     }
 
-    private fun showViewSuccess() {
-        success_linear_layout.visibility = View.VISIBLE
-        loading_frame_layout.visibility = View.GONE
-        error_linear_layout.visibility = View.GONE
-    }
-
-    private fun showViewLoading() {
-        success_linear_layout.visibility = View.GONE
-        loading_frame_layout.visibility = View.VISIBLE
-        error_linear_layout.visibility = View.GONE
-    }
-
-    private fun showViewError() {
-        success_linear_layout.visibility = View.GONE
-        loading_frame_layout.visibility = View.GONE
-        error_linear_layout.visibility = View.VISIBLE
+    override fun setDataToAdapter(data: List<DataModel>){
+        adapter.setData(data)
     }
 
     companion object {
         private const val BOTTOM_SHEET_FRAGMENT_DIALOG_TAG = "111222"
-
     }
 }

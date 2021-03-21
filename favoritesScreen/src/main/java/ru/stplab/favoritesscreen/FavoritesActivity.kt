@@ -3,6 +3,7 @@ package ru.stplab.favoritesscreen
 import android.os.Bundle
 import androidx.recyclerview.widget.LinearLayoutManager
 import kotlinx.android.synthetic.main.activity_favorites.*
+import org.koin.androidx.scope.currentScope
 import org.koin.androidx.viewmodel.ext.android.viewModel
 import ru.stplab.model.data.AppState
 import ru.stplab.model.data.DataModel
@@ -26,7 +27,9 @@ class FavoritesActivity : BaseActivity<AppState>(){
         }
     }
 
-    override val viewModel: FavoritesViewModel by viewModel()
+    override val layoutRes = R.layout.activity_favorites
+
+    override lateinit var viewModel: FavoritesViewModel
 
     private fun initView() {
         favorites_activity_recyclerview.layoutManager = LinearLayoutManager(applicationContext)
@@ -35,9 +38,11 @@ class FavoritesActivity : BaseActivity<AppState>(){
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        setContentView(R.layout.activity_favorites)
 
         supportActionBar?.title = "Favorites"
+
+        val model: FavoritesViewModel by currentScope.inject()
+        viewModel = model
 
         initView()
         viewModel.viewState.observe(this) { renderData(it) }

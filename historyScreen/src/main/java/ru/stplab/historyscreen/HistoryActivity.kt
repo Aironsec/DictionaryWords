@@ -3,6 +3,7 @@ package ru.stplab.historyscreen
 import android.os.Bundle
 import androidx.recyclerview.widget.LinearLayoutManager
 import kotlinx.android.synthetic.main.activity_history.*
+import org.koin.androidx.scope.currentScope
 import org.koin.androidx.viewmodel.ext.android.viewModel
 import ru.stplab.model.data.AppState
 import ru.stplab.model.data.DataModel
@@ -26,6 +27,8 @@ class HistoryActivity : BaseActivity<AppState>(){
         }
     }
 
+    override val layoutRes = R.layout.activity_history
+
     override lateinit var viewModel: HistoryViewModel
 
     private fun initView() {
@@ -35,13 +38,12 @@ class HistoryActivity : BaseActivity<AppState>(){
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        setContentView(R.layout.activity_history)
 
         supportActionBar?.title = "History"
 
         injectDependencies()
-        val hvm: HistoryViewModel by viewModel()
-        viewModel = hvm
+        val model: HistoryViewModel by currentScope.inject()
+        viewModel = model
 
         initView()
         viewModel.viewState.observe(this) { renderData(it) }

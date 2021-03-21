@@ -6,6 +6,8 @@ import android.view.Menu
 import android.view.MenuItem
 import android.widget.Toast
 import androidx.recyclerview.widget.LinearLayoutManager
+import androidx.recyclerview.widget.RecyclerView
+import com.google.android.material.floatingactionbutton.FloatingActionButton
 import com.google.android.material.snackbar.Snackbar
 import com.google.android.play.core.appupdate.AppUpdateManager
 import com.google.android.play.core.appupdate.AppUpdateManagerFactory
@@ -16,17 +18,17 @@ import com.google.android.play.core.install.model.UpdateAvailability
 import com.google.android.play.core.splitinstall.SplitInstallManager
 import com.google.android.play.core.splitinstall.SplitInstallManagerFactory
 import com.google.android.play.core.splitinstall.SplitInstallRequest
-import kotlinx.android.synthetic.main.activity_main.*
-import org.koin.androidx.viewmodel.ext.android.viewModel
-import ru.stplab.dictionarywords.R
-import ru.stplab.model.data.AppState
-import ru.stplab.model.data.DataModel
-import ru.stplab.utils.network.isOnline
+import org.koin.androidx.scope.currentScope
 import ru.stplab.core.BaseActivity
 import ru.stplab.descriptionscreen.DescriptionActivity
-import ru.stplab.model.utils.convertMeaningsToString
+import ru.stplab.dictionarywords.R
+import ru.stplab.dictionarywords.di.injectDependencies
 import ru.stplab.dictionarywords.view.main.adapter.MainAdapter
 import ru.stplab.favoritesscreen.FavoritesActivity
+import ru.stplab.model.data.AppState
+import ru.stplab.model.data.DataModel
+import ru.stplab.model.utils.convertMeaningsToString
+import ru.stplab.utils.ui.viewById
 
 private const val HISTORY_ACTIVITY_PATH = "ru.stplab.dynamichistoryscreen.HistoryActivity"
 private const val HISTORY_ACTIVITY_FEATURE_NAME = "dynamicHistoryScreen"
@@ -36,6 +38,9 @@ class MainActivity : BaseActivity<AppState>() {
 
     private lateinit var splitInstallManager: SplitInstallManager
     private lateinit var appUpdateManager: AppUpdateManager
+
+    private val mainActivityRecyclerView by viewById<RecyclerView>(R.id.main_activity_recyclerview)
+    private val searchFAB by viewById<FloatingActionButton>(R.id.search_fab)
 
     private val adapter: MainAdapter by lazy {
         MainAdapter {
@@ -50,10 +55,11 @@ class MainActivity : BaseActivity<AppState>() {
         }
     }
 
-    override val viewModel: MainViewModel by viewModel()
+    override val layoutRes = R.layout.activity_main
+
+    override lateinit var viewModel: MainViewModel
 
     private fun showSearchFragment() = SearchDialogFragment {
-        isNetworkAvailable = isOnline(applicationContext)
         if (isNetworkAvailable) {
             viewModel.getData(it, isNetworkAvailable, false)
         } else {
@@ -62,9 +68,9 @@ class MainActivity : BaseActivity<AppState>() {
     }.show(supportFragmentManager, BOTTOM_SHEET_FRAGMENT_DIALOG_TAG)
 
     private fun initView() {
-        search_fab.setOnClickListener { showSearchFragment() }
-        main_activity_recyclerview.layoutManager = LinearLayoutManager(applicationContext)
-        main_activity_recyclerview.adapter = adapter
+        searchFAB.setOnClickListener { showSearchFragment() }
+        mainActivityRecyclerView.layoutManager = LinearLayoutManager(applicationContext)
+        mainActivityRecyclerView.adapter = adapter
     }
 
     private val stateUpdatedListener: InstallStateUpdatedListener =
@@ -78,11 +84,12 @@ class MainActivity : BaseActivity<AppState>() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        setContentView(R.layout.activity_main)
 
         supportActionBar?.setHomeButtonEnabled(false)
         supportActionBar?.setDisplayHomeAsUpEnabled(false)
-
+        injectDependencies()
+        val model: MainViewModel by currentScope.inject()
+        viewModel = model
         initView()
         viewModel.viewState.observe(this) { renderData(it) }
         checkForUpdates()

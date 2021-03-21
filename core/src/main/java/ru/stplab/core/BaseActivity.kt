@@ -5,10 +5,12 @@ import android.view.MenuItem
 import android.view.View
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
+import androidx.lifecycle.Observer
 import kotlinx.android.synthetic.main.loading_layout.*
 import ru.stplab.core.viewmodal.BaseViewModal
 import ru.stplab.model.data.AppState
 import ru.stplab.model.data.DataModel
+import ru.stplab.utils.network.OnlineLiveData
 import ru.stplab.utils.network.isOnline
 import ru.stplab.utils.ui.AlertDialogFragment
 
@@ -19,13 +21,16 @@ abstract class BaseActivity<T: AppState>: AppCompatActivity(){
 
     abstract val viewModel: BaseViewModal<T>
 
-    protected var isNetworkAvailable: Boolean = false
+    protected abstract val layoutRes: Int
+
+    protected var isNetworkAvailable: Boolean = true
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        isNetworkAvailable = isOnline(applicationContext)
+        setContentView(layoutRes)
         supportActionBar?.setHomeButtonEnabled(true)
         supportActionBar?.setDisplayHomeAsUpEnabled(true)
+        subscribeToNetworkChange()
     }
 
     override fun onOptionsItemSelected(item: MenuItem): Boolean =
@@ -39,7 +44,6 @@ abstract class BaseActivity<T: AppState>: AppCompatActivity(){
 
     override fun onResume() {
         super.onResume()
-        isNetworkAvailable = isOnline(applicationContext)
         if (!isNetworkAvailable && isDialogNull()) {
             showNoInternetConnectionDialog()
         }
@@ -101,6 +105,17 @@ abstract class BaseActivity<T: AppState>: AppCompatActivity(){
 
     private fun showViewLoading() {
         loading_frame_layout.visibility = View.VISIBLE
+    }
+
+    private fun subscribeToNetworkChange() {
+        OnlineLiveData(this).observe(
+            this@BaseActivity,
+            {
+                isNetworkAvailable = it
+                if (!isNetworkAvailable) {
+                    toast(resources.getString(R.string.dialog_message_device_is_offline))
+                }
+            })
     }
 
     companion object {

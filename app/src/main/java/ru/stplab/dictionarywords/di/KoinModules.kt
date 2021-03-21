@@ -6,11 +6,16 @@ import com.google.gson.GsonBuilder
 import com.jakewharton.retrofit2.adapter.kotlin.coroutines.CoroutineCallAdapterFactory
 import okhttp3.OkHttpClient
 import okhttp3.logging.HttpLoggingInterceptor
+import org.koin.androidx.viewmodel.dsl.viewModel
+import org.koin.core.context.loadKoinModules
+import org.koin.core.qualifier.named
 import org.koin.dsl.module
 import retrofit2.Retrofit
 import retrofit2.converter.gson.GsonConverterFactory
+import ru.stplab.dictionarywords.view.main.MainActivity
 import ru.stplab.dictionarywords.view.main.MainInteractor
 import ru.stplab.dictionarywords.view.main.MainViewModel
+import ru.stplab.favoritesscreen.FavoritesActivity
 import ru.stplab.favoritesscreen.FavoritesInteractor
 import ru.stplab.favoritesscreen.FavoritesViewModel
 import ru.stplab.model.data.DataModel
@@ -21,6 +26,12 @@ import ru.stplab.repository.repository.RepositoryImplementation
 import ru.stplab.repository.repository.RepositoryImplementationLocal
 import ru.stplab.repository.repository.RepositoryLocal
 import ru.stplab.repository.room.db.DataBase
+
+fun injectDependencies() = loadFeature
+
+private val loadFeature by lazy {
+    loadKoinModules(listOf(application, mainScreen, favoritesScreen, apiModule, netModule))
+}
 
 val application = module {
     single<RepositoryContract<List<DataModel>>> {
@@ -70,12 +81,16 @@ val netModule = module {
 }
 
 val mainScreen = module {
-    factory { MainInteractor(get(), get()) }
-    factory { MainViewModel(get()) }
+    scope(named<MainActivity>()) {
+        scoped { MainInteractor(get(), get()) }
+        viewModel { MainViewModel(get()) }
+    }
 }
 
 val favoritesScreen = module {
-    factory { FavoritesInteractor(get(), get()) }
-    factory { FavoritesViewModel(get()) }
+    scope(named<FavoritesActivity>()) {
+        scoped { FavoritesInteractor(get(), get()) }
+        viewModel { FavoritesViewModel(get()) }
+    }
 }
 

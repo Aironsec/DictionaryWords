@@ -1,10 +1,13 @@
 package ru.stplab.dictionarywords.view.main
 
 import android.content.Intent
+import android.os.Build
 import android.os.Bundle
+import android.provider.Settings
 import android.view.Menu
 import android.view.MenuItem
 import android.widget.Toast
+import androidx.annotation.RequiresApi
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.google.android.material.floatingactionbutton.FloatingActionButton
@@ -132,10 +135,13 @@ class MainActivity : BaseActivity<AppState>() {
     }
 
     override fun onCreateOptionsMenu(menu: Menu?): Boolean {
-        menuInflater.inflate(R.menu.history_menu, menu)
+        menuInflater.inflate(R.menu.main_menu_app, menu)
+        menu?.findItem(R.id.menu_screen_settings)?.isVisible =
+            Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q
         return super.onCreateOptionsMenu(menu)
     }
 
+    @RequiresApi(Build.VERSION_CODES.Q)
     override fun onOptionsItemSelected(item: MenuItem): Boolean =
         when (item.itemId) {
             R.id.menu_history -> {
@@ -163,6 +169,10 @@ class MainActivity : BaseActivity<AppState>() {
             }
             R.id.menu_favorites -> {
                 startActivity(Intent(this, FavoritesActivity::class.java))
+                true
+            }
+            R.id.menu_screen_settings -> {
+                startActivityForResult(Intent(Settings.Panel.ACTION_WIFI), 42)
                 true
             }
             else -> super.onOptionsItemSelected(item)

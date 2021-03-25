@@ -1,0 +1,11 @@
+plugins {
+    id 'com.android.library'
+    id 'kotlin-android'
+}
+
+dependencies {
+
+    testImplementation TestImpl.junit
+    androidTestImplementation 'androidx.test.ext:junit:1.1.2'
+    androidTestImplementation TestImpl.espresso
+}
